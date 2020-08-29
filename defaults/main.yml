@@ -1,7 +1,11 @@
 ---
 # defaults file for swarms
-swarm_interface: "{{ ansible_default_ipv4['interface'] }}"
-swarm_address: "{{ hostvars[inventory_hostname]['ansible_' + swarm_interface]['ipv4']['address'] }}"
-swarm_address_manager: "{{hostvars[groups['manager'][0]]['ansible_default_ipv4']['address']}}" 
-swarm_port: 2377
+swarm_ip_internal_manager: "127.0.0.1"
+swarm_ip_external_manager: "127.0.0.1"
+swarm_port: "2377"
+docker_apt_key_url: "https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg"
 docker_compose_version: "1.26.2"
+docker_apt_repository: >
+  deb [arch=amd64]
+  https://download.docker.com/linux/{{ ansible_distribution | lower }}
+  {{ ansible_distribution_release }} stable
