@@ -34,26 +34,24 @@
 
 - name: Get the information from the Docker
   shell: docker info
+  changed_when: False
   register: docker_info
 
 - name: Init Swarm - First manager.
   shell: docker swarm init
     --listen-addr {{ swarm_ip_internal_manager }}
     --advertise-addr {{ swarm_ip_internal_manager }}
-  when: "docker_info.stdout.find('Swarm: active') == -1
-    and inventory_hostname == swarm_ip_external_manager"
+  when: "docker_info is search('inactive') and inventory_hostname == swarm_ip_external_manager"
 
 - name: Get token - Manager
   shell: docker swarm join-token -q manager
   changed_when: False
   register: docker_manager_token
   delegate_to: "{{ swarm_ip_external_manager}}"
-  when: "docker_info.stdout.find('Swarm: active') == -1"
 
 - name: Add manager to the cluster
   shell: docker swarm join --token "{{ docker_manager_token.stdout }}"    {{ swarm_ip_internal_manager}}:{{swarm_port}}
-  changed_when: False
-  when: "docker_info.stdout.find('Swarm: active') == -1
+  when: "docker_info is search('inactive')
     and 'manager' in group_names
     and inventory_hostname != swarm_ip_external_manager"
 
@@ -67,10 +65,8 @@
   changed_when: False
   register: docker_worker_token
   delegate_to: "{{ swarm_ip_external_manager }}"
-  when: "docker_info.stdout.find('Swarm: active') == -1"
 
 - name: Add worker to the cluster
   shell: docker swarm join --token "{{ docker_worker_token.stdout }}"   {{swarm_ip_internal_manager}}:{{swarm_port}}
-  changed_when: False
-  when: "docker_info.stdout.find('Swarm: active') == -1
-    and docker_info.stdout.find('Swarm: pending') == -1"
+  when: "docker_info is search('inactive')
+    and 'worker' in group_names"
